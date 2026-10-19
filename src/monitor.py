@@ -1,6 +1,7 @@
 
 from pathlib import Path
 import psutil
+from alert_rules import is_sustained_high
 
 
 def collect_metrics():
@@ -15,14 +16,42 @@ def collect_metrics():
     return metrics
 
 
+
 def main():
-    metrics = collect_metrics()
+    cpu_readings = []
+    memory_readings = []
 
     print("=== Infrastructure Health Monitor ===")
-    print(f"CPU Usage: {metrics['cpu_percent']:.1f}%")
-    print(f"Memory Usage: {metrics['memory_percent']:.1f}%")
-    print(f"Home Drive Usage: {metrics['disk_percent']:.1f}%")
 
+    for sample_number in range(1, 4):
+        metrics = collect_metrics()
+
+        cpu_readings.append(metrics["cpu_percent"])
+        memory_readings.append(metrics["memory_percent"])
+
+        print(
+            f"Sample {sample_number}: "
+            f"CPU {metrics['cpu_percent']:.1f}% | "
+            f"RAM {metrics['memory_percent']:.1f}% | "
+            f"Disk {metrics['disk_percent']:.1f}%"
+        )
+
+    print("\n=== Alert Evaluation ===")
+
+    if is_sustained_high(cpu_readings):
+        print("WARNING: Sustained high CPU utilization")
+    else:
+        print("CPU: No sustained high utilization detected")
+
+    if is_sustained_high(memory_readings):
+        print("WARNING: Sustained high memory utilization")
+    else:
+        print("Memory: No sustained high utilization detected")
+
+    if metrics["disk_percent"] >= 90:
+        print("WARNING: Disk utilization is 90% or higher")
+    else:
+        print("Disk: Below warning threshold")
 
 if __name__ == "__main__":
     main()
