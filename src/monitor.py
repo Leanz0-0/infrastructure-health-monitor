@@ -1,6 +1,7 @@
-
+import sys
 from pathlib import Path
 import psutil
+from reporting import append_snapshot
 from alert_rules import is_sustained_high
 
 
@@ -14,7 +15,6 @@ def collect_metrics():
     }
 
     return metrics
-
 
 
 def main():
@@ -53,5 +53,62 @@ def main():
     else:
         print("Disk: Below warning threshold")
 
+    # Save the monitoring results
+   
+    report_data = {
+        "cpu_samples_percent": cpu_readings,
+        "memory_samples_percent": memory_readings,
+        "disk_percent": metrics["disk_percent"],
+        "warnings": {
+            "cpu": is_sustained_high(cpu_readings),
+            "memory": is_sustained_high(memory_readings),
+            "disk": metrics["disk_percent"] >= 90,
+        },
+    }
+
+    try:
+        report_path = append_snapshot(report_data)
+
+    except OSError as error:
+        print(
+            f"ERROR: Monitoring completed, "
+            f"but the report could not be saved: {error}",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(f"\nReport saved: {report_path}")
+    return 0
+
+       
+    # Save the monitoring results
+    report_data = {
+        "cpu_samples_percent": cpu_readings,
+        "memory_samples_percent": memory_readings,
+        "disk_percent": metrics["disk_percent"],
+        "warnings": {
+            "cpu": is_sustained_high(cpu_readings),
+            "memory": is_sustained_high(memory_readings),
+            "disk": metrics["disk_percent"] >= 90,
+        },
+    }
+
+    try:
+        report_path = append_snapshot(report_data)
+
+    except OSError as error:
+        print(
+            f"ERROR: Monitoring completed, "
+            f"but the report could not be saved: {error}",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(f"\nReport saved: {report_path}")
+    return 0
+
+
+
+
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
