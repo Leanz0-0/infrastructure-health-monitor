@@ -5,26 +5,33 @@ from pathlib import Path
 import psutil
 
 from alert_rules import is_sustained_high
+from config import load_config
 from reporting import append_snapshot
 from service_check import check_http_service
-
-
-TEST_SERVICE_URL = "http://127.0.0.1:8765/"
 
 
 def collect_metrics():
     drive = Path.home().anchor
 
-    metrics = {
+    return {
         "cpu_percent": psutil.cpu_percent(interval=1),
         "memory_percent": psutil.virtual_memory().percent,
         "disk_percent": psutil.disk_usage(drive).percent,
     }
 
-    return metrics
-
 
 def main():
+    # Validate configuration before collecting data.
+    try:
+        config = load_config()
+
+    except (OSError, ValueError) as error:
+        print(
+            f"ERROR: Invalid or unavailable configuration: {error}",
+            file=sys.stderr,
+        )
+        return 2
+
     cpu_readings = []
     memory_readings = []
 
@@ -43,14 +50,24 @@ def main():
             f"Disk {metrics['disk_percent']:.1f}%"
         )
 
-    # Check the local HTTP test service
-    service_available = check_http_service(TEST_SERVICE_URL)
+    service_available = check_http_service(
+        config["service_url"],
+        timeout=config["service_timeout_seconds"],
+    )
 
-    # Calculate warnings once
     warnings = {
-        "cpu": is_sustained_high(cpu_readings),
-        "memory": is_sustained_high(memory_readings),
-        "disk": metrics["disk_percent"] >= 90,
+        "cpu": is_sustained_high(
+            cpu_readings,
+            threshold=config["cpu_warning_percent"],
+        ),
+        "memory": is_sustained_high(
+            memory_readings,
+            threshold=config["memory_warning_percent"],
+        ),
+        "disk": (
+            metrics["disk_percent"]
+            >= config["disk_warning_percent"]
+        ),
         "service": not service_available,
     }
 
@@ -67,7 +84,7 @@ def main():
         print("Memory: No sustained high utilization detected")
 
     if warnings["disk"]:
-        print("WARNING: Disk utilization is 90% or higher")
+        print("WARNING: High disk utilization")
     else:
         print("Disk: Below warning threshold")
 
@@ -76,14 +93,18 @@ def main():
     else:
         print("HTTP Service: Available")
 
-    # Prepare historical monitoring data
     report_data = {
         "cpu_samples_percent": cpu_readings,
         "memory_samples_percent": memory_readings,
         "disk_percent": metrics["disk_percent"],
         "service": {
-            "url": TEST_SERVICE_URL,
+            "url": config["service_url"],
             "available": service_available,
+        },
+        "thresholds": {
+            "cpu_percent": config["cpu_warning_percent"],
+            "memory_percent": config["memory_warning_percent"],
+            "disk_percent": config["disk_warning_percent"],
         },
         "warnings": warnings,
     }

@@ -1,0 +1,8 @@
+
+{
+    "cpu_warning_percent": 85,
+    "memory_warning_percent": 85,
+    "disk_warning_percent": 90,
+    "service_url": "http://127.0.0.1:8765/",
+    "service_timeout_seconds": 2
+}

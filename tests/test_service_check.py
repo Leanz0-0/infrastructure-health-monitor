@@ -25,13 +25,17 @@ class TestHTTPService(unittest.TestCase):
             TEST_URL, 503, "Service Unavailable", None, None
         )
 
-        with patch(
-            "src.service_check.urlopen",
-            side_effect=error
-        ):
-            result = service_check.check_http_service(TEST_URL)
+        try:
+            with patch(
+                "src.service_check.urlopen",
+                side_effect=error
+            ):
+                result = service_check.check_http_service(TEST_URL)
 
-        self.assertFalse(result)
+            self.assertFalse(result)
+
+        finally:
+            error.close()
 
     def test_connection_failure(self):
         with patch(
