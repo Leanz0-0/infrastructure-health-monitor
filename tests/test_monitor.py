@@ -35,6 +35,11 @@ class TestMonitorErrorHandling(unittest.TestCase):
             ),
             patch.object(
                 monitor,
+                "check_http_service",
+                return_value=False
+            ),
+            patch.object(
+                monitor,
                 "append_snapshot",
                 side_effect=OSError("Simulated write failure")
             ),
@@ -47,6 +52,11 @@ class TestMonitorErrorHandling(unittest.TestCase):
 
         self.assertIn(
             "WARNING: Sustained high memory utilization",
+            output.getvalue()
+        )
+
+        self.assertIn(
+            "WARNING: Local HTTP service unavailable",
             output.getvalue()
         )
 
