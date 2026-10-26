@@ -1,56 +1,27 @@
-\# Infrastructure Health Monitor — Architecture
+# Infrastructure Health Monitor — Architecture
 
-
-
-\## System Overview
-
-
+## System Overview
 
 The Infrastructure Health Monitor is a locally executed Python application designed to collect system metrics, evaluate monitoring rules, check HTTP service availability, and save structured monitoring records.
 
-
-
 The application uses a modular architecture to separate configuration, data collection, warning evaluation, and reporting.
 
-
-
-\## Architecture Diagram
-
-
+## Architecture Diagram
 
 ```mermaid
-
 flowchart TD
-
-&#x20;   A\["monitor.json"] --> B\["config.py"]
-
-&#x20;   B --> C\["monitor.py"]
-
-
-
-&#x20;   C --> D\["psutil: System Metrics"]
-
-&#x20;   C --> E\["service\_check.py: HTTP Availability"]
-
-
-
-&#x20;   D --> F\["Warning Evaluation"]
-
-&#x20;   E --> F
-
-&#x20;   F --> G\["Console Output"]
-
-&#x20;   F --> H\["reporting.py"]
-
-&#x20;   H --> I\["metrics.jsonl"]
-
+    A["monitor.json"] --> B["config.py"]
+    B --> C["monitor.py"]
+    C --> D["psutil: System Metrics"]
+    C --> E["service_check.py: HTTP Availability"]
+    D --> F["Warning Evaluation"]
+    E --> F
+    F --> G["Console Output"]
+    F --> H["reporting.py"]
+    H --> I["metrics.jsonl"]
 ```
 
-
-
-\## Component Responsibilities
-
-
+## Component Responsibilities
 
 | Component | Responsibility |
 
@@ -60,9 +31,9 @@ flowchart TD
 
 | config.py | Loads and validates configuration |
 
-| alert\_rules.py | Evaluates sustained resource utilization |
+| alert_rules.py | Evaluates sustained resource utilization |
 
-| service\_check.py | Checks HTTP endpoint availability |
+| service_check.py | Checks HTTP endpoint availability |
 
 | reporting.py | Writes timestamped JSONL reports |
 
@@ -70,68 +41,44 @@ flowchart TD
 
 | psutil | Provides system resource measurements |
 
+## Execution Workflow
 
+1. Load the configuration file.
 
-\## Execution Workflow
+2. Validate configuration settings.
 
+3. Collect three system resource samples.
 
+4. Check the configured HTTP endpoint.
 
-1\. Load the configuration file.
+5. Evaluate warning conditions.
 
-2\. Validate configuration settings.
+6. Display monitoring results.
 
-3\. Collect three system resource samples.
+7. Append a timestamped monitoring record.
 
-4\. Check the configured HTTP endpoint.
+8. Return an application exit code.
 
-5\. Evaluate warning conditions.
-
-6\. Display monitoring results.
-
-7\. Append a timestamped monitoring record.
-
-8\. Return an application exit code.
-
-
-
-\## Reliability Design
-
-
+## Reliability Design
 
 The application distinguishes between monitored infrastructure problems and application execution failures.
 
+- Exit code 0 indicates successful monitoring and reporting.
 
+- Exit code 1 indicates report-writing failure.
 
-\- Exit code 0 indicates successful monitoring and reporting.
+- Exit code 2 indicates configuration loading or validation failure.
 
-\- Exit code 1 indicates report-writing failure.
-
-\- Exit code 2 indicates configuration loading or validation failure.
-
-
-
-\## Security Boundaries
-
-
+## Security Boundaries
 
 The default HTTP test endpoint is localhost.
 
-
-
 The application does not require elevated privileges for its current monitoring functionality.
-
-
 
 Local monitoring records are excluded from the Git repository.
 
-
-
-\## Deployment Scope
-
-
+## Deployment Scope
 
 The current implementation is a local, single-execution monitoring tool.
-
-
 
 It is not a distributed monitoring platform, background service, or centralized monitoring system.
